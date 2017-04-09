@@ -14,17 +14,38 @@ module PuppetBox
     # Error(s) encountered while running puppet
     PS_ERROR           = 2
 
-    attr_accessor :status
-    attr_accessor :messages
+    def initialize()
+      @report = []
+    end
 
-    def initialize(status, messages)
-      @status   = status
-      @messages = messages
+    def report(status, messages)
+      @report.push({:status => status, :messages => messages})
     end
 
     def passed
-      @status == PS_OK
+      passed = true
+      @report.each { |r|
+        passed &= r[:status] == PS_OK
+      }
+
+      passed
     end
 
+    def messages(run=-1)
+      messages = []
+      if run < 0
+        # all runs concatenated
+        @report.each { |r|
+          messages << r[:messages]
+        }
+      else
+        if run < @report.size
+          messages << @report[run][:messages]
+        else
+          raise "Report at index #{run} does not exist, #{@report.size} reports available"
+        end
+      end
+      messages
+    end
   end
 end

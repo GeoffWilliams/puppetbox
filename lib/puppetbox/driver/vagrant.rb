@@ -1,6 +1,6 @@
 module PuppetBox
   module Driver
-    module Vagrant
+    class Vagrant <<
 
     end
   end
