@@ -1,8 +1,7 @@
+[![Build Status](https://travis-ci.org/GeoffWilliams/puppetbox.svg?branch=master)](https://travis-ci.org/GeoffWilliams/puppetbox)
 # Puppetbox
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/puppetbox`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+ A box running puppet :)
 
 ## Installation
 
@@ -33,4 +32,3 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/puppetbox.
-
