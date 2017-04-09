@@ -5,7 +5,7 @@ require 'puppetbox/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "puppetbox"
-  spec.version       = Puppetbox::VERSION
+  spec.version       = PuppetBox::VERSION
   spec.authors       = ["Geoff Williams"]
   spec.email         = ["geoff@geoffwilliams.me.uk"]
 

@@ -1,5 +1,7 @@
 require "puppetbox/version"
 
-module Puppetbox
-  # Your code goes here...
+module PuppetBox
+  def self.run_puppet(driver, instance, puppet_class)
+
+  end
 end
