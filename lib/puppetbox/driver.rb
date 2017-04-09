@@ -20,6 +20,12 @@ module PuppetBox
 
     end
 
+    def self.log_error()
+    end
+
+    def self.log_debug()
+    end
+
   end
 
 end
