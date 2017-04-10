@@ -4,28 +4,28 @@ require "puppetbox/result"
 RSpec.describe PuppetBox::Result do
   it "reports status ok as passed" do
     res = PuppetBox::Result.new()
-    res.report(PuppetBox::Result::PS_OK,'blah')
-    res.report(PuppetBox::Result::PS_OK,'blah')
+    res.report(2,'blah')
+    res.report(0,'blah')
     expect(res.passed).to be true
   end
 
   it "reports status not idempotent as failed" do
     res = PuppetBox::Result.new()
-    res.report(PuppetBox::Result::PS_OK,'blah')
-    res.report(PuppetBox::Result::PS_NOT_IDEMPOTENT,'blah')
+    res.report(2,'blah')
+    res.report(2,'blah')
     expect(res.passed).to be false
   end
 
   it "reports status error as failed" do
     res = PuppetBox::Result.new()
-    res.report(PuppetBox::Result::PS_ERROR,'blah')
-    res.report(PuppetBox::Result::PS_OK,'blah')
+    res.report(4,'blah')
+    res.report(0,'blah')
     expect(res.passed).to be false
   end
 
   it "reports status unkown as failed" do
     res = PuppetBox::Result.new()
-    res.report(-1,'blah')
+    res.report(240,'blah')
     expect(res.passed).to be false
   end
 
@@ -41,8 +41,8 @@ RSpec.describe PuppetBox::Result do
 
   it "returns messages from first run only correctly" do
     res = PuppetBox::Result.new()
-    res.report(PuppetBox::Result::PS_OK,'first')
-    res.report(PuppetBox::Result::PS_OK,'second')
+    res.report(0,'first')
+    res.report(0,'second')
 
     messages = res.messages(0)
     expect(messages.size).to be 1
@@ -51,8 +51,8 @@ RSpec.describe PuppetBox::Result do
 
   it "returns messages from second run only correctly" do
     res = PuppetBox::Result.new()
-    res.report(PuppetBox::Result::PS_OK,'first')
-    res.report(PuppetBox::Result::PS_OK,'second')
+    res.report(0,'first')
+    res.report(0,'second')
 
     messages = res.messages(1)
     expect(messages[0]).to eq 'second'
@@ -60,8 +60,8 @@ RSpec.describe PuppetBox::Result do
 
   it "raises when accessing non-existant report" do
     res = PuppetBox::Result.new()
-    res.report(PuppetBox::Result::PS_OK,'first')
-    res.report(PuppetBox::Result::PS_OK,'second')
+    res.report(0,'first')
+    res.report(0,'second')
 
     expect{res.messages(2)}.to raise_error /does not exist/
   end

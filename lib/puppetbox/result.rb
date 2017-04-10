@@ -18,7 +18,25 @@ module PuppetBox
       @report = []
     end
 
-    def report(status, messages)
+    # 0: The run succeeded with no changes or failures; the system was already in the desired state.
+    # 1: The run failed, or wasn't attempted due to another run already in progress.
+    # 2: The run succeeded, and some resources were changed.
+    # 4: The run succeeded, and some resources failed.
+    # 6: The run succeeded, and included both changes and failures.
+    def report(status_code, messages)
+      status = PS_ERROR
+      if @report.empty?
+        # first run
+        if status_code == 0 or status_code == 2
+          status = PS_OK
+        end
+      else
+        if status_code == 0
+          status = PS_OK
+        elsif status_code == 2
+          status = PS_NOT_IDEMPOTENT
+        end
+      end
       @report.push({:status => status, :messages => messages})
     end
 

@@ -25,9 +25,15 @@ TODO: Write usage instructions here
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+### Additional vagrant boxes
+Many vagrant boxes that would be useful can't be shared for legal reasons, eg windows, suse, etc.  These requirements can be worked around by users producing their own Vagrant boxes for internal use.
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+A really good source of build scripts is [bento](https://github.com/chef/bento) from Chef.
+
+PuppetBox requires each box:
+* Has puppet installed
+* Has all puppet executables in `$PATH`
+* Has the ability to work with vagrant shared folders.  This usually means guestbox additions must be installed, although rsync can work in some situations.  When using rsync, remember that your code will only be synced as your VM is reloaded
 
 ## Contributing
 
