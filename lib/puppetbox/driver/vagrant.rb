@@ -38,15 +38,18 @@ module PuppetBox
       #   4: The run succeeded, and some resources failed.
       #   6: The run succeeded, and included both changes and failures.
       def run_puppet(puppet_class)
-        run_hash = @vm.run("sudo -i puppet apply --detailed-exitcodes -e 'include #{puppet_class}'")
-        @result.report(run_hash[:status], run_hash[:messages])
+        status_code, messages = @vm.run(
+          "sudo -i puppet apply --detailed-exitcodes -e 'include #{puppet_class}'"
+        )
+        @result.report(status_code, messages)
+        @result.passed
       end
 
       # Open a connection to a box (eg start a vm, ssh to a host etc)
       def open()
         # make sure working dir exists...
         FileUtils.mkdir_p(@working_dir)
-        vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir: @working_dir)
+        vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir: @working_dir, logger: @logger)
 
         @logger.debug("reading instance metadata for #{@name}")
         @vm = vom.instance(@name)
@@ -69,13 +72,18 @@ module PuppetBox
 
       # Test that a VM is operational and able to run puppet
       def self_test()
-        @vm.run("sudo -i puppet --version")[:status] == 0
+        status_code, messages = @vm.run("sudo -i puppet --version")
+        status_code == 0
       end
 
       def run_puppet_x2(puppet_class)
-        # fixme - link module
-        run_puppet(puppet_class)
-        run_puppet(puppet_class)
+        # if you need to link a module into puppet's modulepath either do it
+        # before running puppet (yet to be supported) or use the @config hash
+        # for vagrant to mount what you need as a shared folder
+        if run_puppet(puppet_class)
+          # Only do the second run if the first run passes
+          run_puppet(puppet_class)
+        end
       end
 
     end

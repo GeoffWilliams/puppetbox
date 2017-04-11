@@ -49,10 +49,20 @@ module PuppetBox
       passed
     end
 
+    def report_count
+      @report.size
+    end
+
+    def report_message_count(report)
+      @report[report].messages.size
+    end
+
+
+
     def messages(run=-1)
       messages = []
       if run < 0
-        # all runs concatenated
+        # all NESTED in order of report
         @report.each { |r|
           messages << r[:messages]
         }
