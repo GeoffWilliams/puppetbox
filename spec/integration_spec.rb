@@ -13,13 +13,14 @@ RSpec.describe PuppetBox do
     it "reports passing code correctly" do
       di = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE)
       res = PuppetBox.run_puppet(di, "passing")
-      expect(res.passed).to be true
+      expect(res.passed?).to be true
     end
 
     it "reports failing code correctly" do
       di = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE)
       res = PuppetBox.run_puppet(di, "failing")
-      expect(res.passed).to be false
+      expect(res.passed?).to be false
     end
+
   end
 end

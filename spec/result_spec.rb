@@ -6,27 +6,27 @@ RSpec.describe PuppetBox::Result do
     res = PuppetBox::Result.new()
     res.report(2,['blah'])
     res.report(0,['blah'])
-    expect(res.passed).to be true
+    expect(res.passed?).to be true
   end
 
   it "reports status not idempotent as failed" do
     res = PuppetBox::Result.new()
     res.report(2,['blah'])
     res.report(2,['blah'])
-    expect(res.passed).to be false
+    expect(res.passed?).to be false
   end
 
   it "reports status error as failed" do
     res = PuppetBox::Result.new()
     res.report(4,['blah'])
     res.report(0,['blah'])
-    expect(res.passed).to be false
+    expect(res.passed?).to be false
   end
 
   it "reports status unkown as failed" do
     res = PuppetBox::Result.new()
     res.report(240,['blah'])
-    expect(res.passed).to be false
+    expect(res.passed?).to be false
   end
 
   it "returns all messages from all runs correctly" do
@@ -64,5 +64,12 @@ RSpec.describe PuppetBox::Result do
     res.report(0,['second'])
 
     expect{res.messages(2)}.to raise_error /does not exist/
+  end
+
+  it "does not report tests passed when no tests executed" do
+    res = PuppetBox::Result.new()
+
+    # we return nil in this special case (which will test as ==false)
+    expect(res.passed?).to be nil
   end
 end

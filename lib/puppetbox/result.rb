@@ -40,10 +40,18 @@ module PuppetBox
       @report.push({:status => status, :messages => messages})
     end
 
-    def passed
-      passed = true
+    # Test whether this set of results passed or not
+    # @return true if tests were executed and passed, nil if no tests were
+    #   executed, false if tests were exectued and there were failures
+    def passed?
+      passed = nil
       @report.each { |r|
-        passed &= r[:status] == PS_OK
+        puts "...REPORT"
+        if passed == nil
+          passed = (r[:status] == PS_OK)
+        else
+          passed &= (r[:status] == PS_OK)
+        end
       }
 
       passed

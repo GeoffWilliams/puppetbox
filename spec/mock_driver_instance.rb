@@ -2,16 +2,15 @@ require "puppetbox/result"
 
 class MockDriverInstance
   def initialize
+    @result = PuppetBox::Result.new()
   end
 
   def pass
-    @result = PuppetBox::Result.new()
     @result.report(PuppetBox::Result::PS_OK, "fake passed report")
     @result.report(PuppetBox::Result::PS_OK, "fake passed report")
   end
 
   def fail
-    @result = PuppetBox::Result.new()
     @result.report(PuppetBox::Result::PS_OK, "fake passed report")
     @result.report(PuppetBox::Result::PS_NOT_IDEMPOTENT, "fake not idempotent report")
   end
