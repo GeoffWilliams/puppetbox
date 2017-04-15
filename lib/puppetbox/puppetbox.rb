@@ -1,3 +1,7 @@
+require "puppetbox/result_set"
+require "puppetbox/logger"
+require "puppetbox/nodeset"
+
 module PuppetBox
   class PuppetBox
 
