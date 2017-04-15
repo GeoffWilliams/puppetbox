@@ -1,6 +1,7 @@
 require "puppetbox/result_set"
 require "puppetbox/logger"
 require "puppetbox/nodeset"
+require "puppetbox/driver/vagrant"
 
 module PuppetBox
   class PuppetBox
@@ -12,19 +13,19 @@ module PuppetBox
       # A complete test suite of tests to run - includes driver instance, host
       # and classes
       @testsuite = {}
-      @logger = Logger.new(logger)
+      @logger = Logger.new(logger).logger
 
       # the nodesets file contains a YAML representation of a hash containing
       # the node name, config options, driver to use etc - so external tools can
       # talk to use about nodes of particular name and puppetbox will sort out
       # the how and why of what this exactly should involve
-      @nodesets = NodeSet.parse(nodeset_file)
+      @nodeset = NodeSet.new(nodeset_file)
     end
 
 
     # Enqueue a test into the `testsuite` for
     def enqueue_test(node_name, run_from, puppet_class)
-      enqueue_driver_instance(node_name, run_from)
+      instantiate_driver(node_name, run_from)
       @testsuite[node_name]["classes"] << puppet_class
       #  get_driver_instance(driver_name, host)
       # node_name
@@ -39,11 +40,12 @@ module PuppetBox
       }
     end
 
-    def enqueue_driver_instance(node_name, run_from)
-      config = @nodeset[node_name]["config"]
-      driver = @nodeset[node_name]["driver"]
+    def instantiate_driver(node_name, run_from)
+      node    = @nodeset.get_node(node_name)
+      config  = node["config"]
+      driver  = node["driver"]
       if @testsuite.has_key?(node_name)
-        @logger.debug("#{driver_id} already registered")
+        @logger.debug("#{node_name} already registered")
       else
         @logger.debug("Creating new driver instance for #{node_name}")
 
@@ -61,18 +63,20 @@ module PuppetBox
           # failed runs, however, if user runs in onceover's --debug mode, then we
           # will print the customary ton of messages, including those from vagrant
           # itself.
-          di = ::PuppetBox::Driver::Vagrant.new(
+          puts config["box"]
+          di = Driver::Vagrant.new(
             node_name,
             run_from,
+            config,
             # "#{repo.tempdir}/etc/puppetlabs/code/environments/production",
             logger: @logger,
-            config: config,
+
           )
         else
           raise "PuppetBox only supports driver: 'vagrant' at the moment (requested: #{driver})"
         end
 
-        @testsuite[driver_id] = {
+        @testsuite[node_name] = {
           "instance" => di,
           "classes"  => [],
         }
@@ -146,7 +150,7 @@ module PuppetBox
     # Run puppet using `driver_instance` to execute
     def run_puppet(driver_instance, puppet_classes, logger:nil, reset_after_run:true)
       # use supplied logger in preference to the default puppetbox logger instance
-      logger = logger || @logger.logger
+      logger = logger || @logger
       logger.debug("#{driver_instance.node_name} running test for #{puppet_classes}")
       puppet_classes = Array(puppet_classes)
       results = ResultSet.new
@@ -166,10 +170,12 @@ module PuppetBox
           logger.debug("#{driver_instance.node_name} test completed, closing instance")
           driver_instance.close
         else
-          raise "#{driver_instance.id} self test failed, unable to continue"
+          driver_instance.close
+          raise "#{driver_instance.node_name} self test failed, unable to continue"
         end
       else
-        raise "#{driver_instance.id} failed to start, unable to continue"
+        driver_instance.close
+        raise "#{driver_instance.node_name} failed to start, unable to continue"
       end
 
       results

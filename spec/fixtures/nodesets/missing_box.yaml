@@ -1,0 +1,6 @@
+puppetbox_nodeset: 1
+nodes:
+  missing_box:
+    config:
+      folders: spec/acceptance/fixtures:/fixtures
+    driver: vagrant

@@ -7,20 +7,26 @@ module PuppetBox
   module Driver
     class Vagrant
       # fixme - seems abandoned, might need to make my own :(
-      DEFAULT_VAGRANT_BOX = "puppetlabs/centos-7.2-64-puppet"
+      # DEFAULT_VAGRANT_BOX = "puppetlabs/centos-7.2-64-puppet"
       PUPPET_CODE_MOUNT   = "/etc/puppetlabs/code/environments/production"
 
       def node_name
         @name
       end
 
-      def initialize(name, codedir, keep_vm:true, working_dir:nil, config:{'box'=> DEFAULT_VAGRANT_BOX}, logger: nil)
+#      def initialize(name, codedir, keep_vm:true, working_dir:nil, config:{'box'=> DEFAULT_VAGRANT_BOX}, logger: nil)
+      def initialize(name, codedir, config, keep_vm:false, working_dir:nil, logger: nil)
+
         @name         = name
         @keep_vm      = keep_vm
         @working_dir  = working_dir || File.join(Dir.home, '.puppetbox')
         @config       = config
         @result       = Result.new
         @logger       = Logger.new(logger).logger
+
+        if ! @config.has_key?("box")
+          raise "Node #{node_name} must specify box"
+        end
 
         # Add the code dir to the config has so that it will automatically become
         # a shared folder when the VM boots
@@ -70,6 +76,7 @@ module PuppetBox
       def open()
         # make sure working dir exists...
         FileUtils.mkdir_p(@working_dir)
+
         vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir: @working_dir, logger: @logger)
 
         @logger.debug("reading instance metadata for #{@name}")
@@ -80,15 +87,20 @@ module PuppetBox
         @vm.config=(@config)
         @vm.save
         @logger.debug("Instance saved and ready for starting")
-        @vm.start
+        started = @vm.start
       end
 
       # Close a connection to a box (eg stop a vm, probaly doesn't need to do
       # anything on SSH...)
       def close()
         if ! @keep_vm
+          @logger.info("Closing #{@node_name}")
           @vm.purge
         end
+      end
+
+      def reset()
+        @vm.reset
       end
 
       # Test that a VM is operational and able to run puppet

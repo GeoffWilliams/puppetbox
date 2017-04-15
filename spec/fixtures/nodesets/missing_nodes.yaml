@@ -1,0 +1,8 @@
+puppetbox_nodeset: 1
+# should all be contained inside an element `nodes`
+CentOS-7.2-64:
+  config:
+    folders: spec/acceptance/fixtures:/fixtures
+    box: puppetlabs/centos-7.2-64-puppet
+    provision: /fixtures/fake_pbis.sh
+  driver: vagrant

@@ -2,9 +2,8 @@
 # Default nodeset file for use with acceptance testing puppetbox itself
 ---
 puppetbox_nodeset: 1
-hosts:
-  CentOS-7.2-64:
+nodes:
+  test:
     config:
       box: puppetlabs/centos-7.2-64-puppet
-      provision: /fixtures/fake_pbis.sh
     driver: vagrant
