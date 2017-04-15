@@ -23,7 +23,7 @@ module PuppetBox
     # 2: The run succeeded, and some resources were changed.
     # 4: The run succeeded, and some resources failed.
     # 6: The run succeeded, and included both changes and failures.
-    def report(status_code, messages)
+    def save(status_code, messages)
       status = PS_ERROR
       if @report.empty?
         # first run

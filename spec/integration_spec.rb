@@ -1,4 +1,5 @@
 require "spec_helper"
+require 'puppetbox/puppetbox'
 require 'puppetbox/driver/vagrant'
 
 RSpec.describe PuppetBox do
@@ -12,13 +13,15 @@ RSpec.describe PuppetBox do
   if ENV['CI'] != 'true'
     it "reports passing code correctly" do
       di = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE)
-      res = PuppetBox.run_puppet(di, "passing")
+      pb = PuppetBox::PuppetBox.new
+      res = pb.run_puppet(di, "passing")
       expect(res.passed?).to be true
     end
 
     it "reports failing code correctly" do
       di = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE)
-      res = PuppetBox.run_puppet(di, "failing")
+      pb = PuppetBox::PuppetBox.new
+      res = pb.run_puppet(di, "failing")
       expect(res.passed?).to be false
     end
 

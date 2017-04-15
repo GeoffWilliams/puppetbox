@@ -10,8 +10,8 @@ module PuppetBox
       DEFAULT_VAGRANT_BOX = "puppetlabs/centos-7.2-64-puppet"
       PUPPET_CODE_MOUNT   = "/etc/puppetlabs/code/environments/production"
 
-      def id
-        return "PuppetBox::Driver::Vagrant(name:#{@name})"
+      def node_name
+        @name
       end
 
       def initialize(name, codedir, keep_vm:true, working_dir:nil, config:{'box'=> DEFAULT_VAGRANT_BOX}, logger: nil)
@@ -19,8 +19,8 @@ module PuppetBox
         @keep_vm      = keep_vm
         @working_dir  = working_dir || File.join(Dir.home, '.puppetbox')
         @config       = config
-        @result       = PuppetBox::Result.new
-        @logger       = PuppetBox::Logger.new(logger).logger
+        @result       = Result.new
+        @logger       = Logger.new(logger).logger
 
         # Add the code dir to the config has so that it will automatically become
         # a shared folder when the VM boots
@@ -62,7 +62,7 @@ module PuppetBox
         status_code, messages = @vm.run(
           "sudo -i puppet apply --detailed-exitcodes -e 'include #{puppet_class}'"
         )
-        @result.report(status_code, messages)
+        @result.save(status_code, messages)
         @result.passed?
       end
 

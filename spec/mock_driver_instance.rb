@@ -6,13 +6,13 @@ class MockDriverInstance
   end
 
   def pass
-    @result.report(PuppetBox::Result::PS_OK, "fake passed report")
-    @result.report(PuppetBox::Result::PS_OK, "fake passed report")
+    @result.save(PuppetBox::Result::PS_OK, "fake passed report")
+    @result.save(PuppetBox::Result::PS_OK, "fake passed report")
   end
 
   def fail
-    @result.report(PuppetBox::Result::PS_OK, "fake passed report")
-    @result.report(PuppetBox::Result::PS_NOT_IDEMPOTENT, "fake not idempotent report")
+    @result.save(PuppetBox::Result::PS_OK, "fake passed report")
+    @result.save(PuppetBox::Result::PS_NOT_IDEMPOTENT, "fake not idempotent report")
   end
 
   def run_puppet_x2

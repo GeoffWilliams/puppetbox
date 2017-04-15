@@ -1,0 +1,4 @@
+puppetbox_nodeset: 1
+hosts:
+  CentOS-7.2-64:
+    driver: vagrant

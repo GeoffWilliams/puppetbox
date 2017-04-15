@@ -9,3 +9,10 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 end
+
+
+NODESET_GOOD            = "spec/fixtures/nodesets/good.yaml"
+NODESET_INVALID_VERSION = "spec/fixtures/nodesets/invalid_version.yaml"
+NODESET_MISSING_CONFIG  = "spec/fixtures/nodesets/missing_config.yaml"
+NODESET_MISSING_DRIVER  = "spec/fixtures/nodesets/missing_driver.yaml"
+NODESET_BROKEN          = "spec/fixtures/nodesets/broken.yaml"
