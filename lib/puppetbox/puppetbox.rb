@@ -7,7 +7,10 @@ require "puppetbox/report"
 module PuppetBox
   class PuppetBox
 
-    WORKING_DIR = File.join(Dir.home, '.puppetbox')
+    WORKING_DIR         = File.join(Dir.home, '.puppetbox')
+    ACCEPTANCE_TEST_DIR = "spec/acceptance"
+    ACCEPTANCE_DEFAULT  = "__ALL__"
+    SETUP_SCRIPT_GLOB   = "setup.*"
 
     def initialize(logger:nil, nodeset_file: nil, working_dir: nil)
       # The results of all tests on all driver instances
@@ -101,6 +104,57 @@ module PuppetBox
       @result_set.passed?
     end
 
+    # Sometimes you need to run a script before running a class, or just on
+    # particular host(s).  Check for the presence of a bash or powershell script
+    # and execute it on the system under test.  If there is an error fail all
+    # tests immediately since it means our test setup is invalid.
+    #
+    # Naming convention/example:
+    # └── SLES-12.1-64
+    #    ├── __ALL__
+    #    │   └── setup.sh
+    #    └── role__puppet__master
+    #        └── setup.sh
+    #
+    def setup_test(driver_instance, puppet_class)
+      script_filename_base = File.join(ACCEPTANCE_TEST_DIR, driver_instance.node_name)
+
+      # 1st choice - exact match on classname (with :: converted to __)
+      script_filename_class = File.join(
+        script_filename_base,
+        puppet_class.gsub(/::/,'__'),
+        SETUP_SCRIPT_GLOB
+      )
+      found = Dir.glob(script_filename_class)
+      if found.any?
+        script_target = found[0]
+      else
+        # 2nd choice - the __ALL__ directory
+        script_filename_default = File.join(
+          script_filename_base,
+          ACCEPTANCE_DEFAULT,
+          SETUP_SCRIPT_GLOB
+        )
+        found = Dir.glob(script_filename_default)
+        if found.any?
+          @logger.info(
+            "Using setup script from #{script_filename_default} on "\
+            "#{driver_instance.node_name} for #{puppet_class}, create "\
+            "#{script_filename_class} to override")
+          script_target = found[0]
+        else
+          script_target = false
+          @logger.info(
+            "No setup scripts found for #{driver_instance.node_name} and "\
+            "#{puppet_class} create #{script_filename_default} or "\
+            "#{script_filename_class} if required")
+        end
+      end
+      if script_target
+        driver_instance.run_setup_script(script_target)
+      end
+    end
+
     # Run puppet using `driver_instance` to execute
     def run_puppet(driver_instance, puppet_classes, logger:nil, reset_after_run:true)
       # use supplied logger in preference to the default puppetbox logger instance
@@ -118,6 +172,7 @@ module PuppetBox
               # per class on the self-test which we now know will succeed
               driver_instance.reset
             end
+            setup_test(driver_instance, puppet_class)
             logger.info("running test #{driver_instance.node_name} - #{puppet_class}")
             driver_instance.run_puppet_x2(puppet_class)
             @result_set.save(driver_instance.node_name, puppet_class, driver_instance.result)

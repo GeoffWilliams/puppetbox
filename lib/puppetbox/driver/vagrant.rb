@@ -8,7 +8,9 @@ module PuppetBox
     class Vagrant
       WORKING_DIR_VAGRANT   = "vagrant"
       PUPPET_CODE_MOUNT     = "/etc/puppetlabs/code/environments/production"
-      SPEC_ACCEPTANCE_MOUNT = "spec/acceptance:/acceptance"
+
+      # mount spec/accpetance into the same directory name inside the VM for simplicity
+      SPEC_ACCEPTANCE_MOUNT = "spec/acceptance:/spec/acceptance"
 
       def node_name
         @name
@@ -95,6 +97,33 @@ module PuppetBox
           @logger.error("Error #{status_code} running puppet: #{messages}")
         end
         self_test
+      end
+
+      # Run a script on the VM by name.  We pass in the script name and are able
+      # to run because the ./spec/acceptance directory is mounted inside the VM
+      #
+      # We can figure out windows/linux scripts based on the filename too
+      def run_setup_script(script_file)
+
+        if script_file =~ /.ps1$/
+          # powershell - not supported yet
+          raise("Windows not supported yet https://github.com/GeoffWilliams/puppetbox/issues/3")
+        else
+          # force absolute path
+          script_file = "/#{script_file}"
+
+          @logger.info("Running setup script #{script_file} on #{@name}")
+          status_code, messages = @vm.run("sudo -i #{script_file}")
+          status = (status_code == 0)
+          if status
+            @logger.info("setup script #{script_file} executed successfully")
+          else
+            # our tests are fubar if any setup script failed
+            message = messages.join("\n")
+            raise("setup script #{script_file} failed on #{node_name}:  #{message}")
+          end
+        end
+        status
       end
 
       def run_puppet_x2(puppet_class)
