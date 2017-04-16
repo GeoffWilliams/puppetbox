@@ -27,6 +27,7 @@ module PuppetBox
     end
 
     def passed?
+      ! @results.empty? and
       @results.map { |node_name, class_results_hash|
         class_results_hash.map { |class_name, class_results|
           class_results.passed?
@@ -34,7 +35,7 @@ module PuppetBox
       }.all?
     end
 
-    def data
+    def results
       @results
     end
 
@@ -59,7 +60,7 @@ module PuppetBox
     def test_size
       @results.map {|node_name, classes|
         classes.size
-      }.reduce(:+)
+      }.reduce(:+) || 0
     end
 
 

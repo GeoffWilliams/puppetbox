@@ -1,8 +1,13 @@
 require "puppetbox/result"
 
 class MockDriverInstance
+
   def initialize
     @result = PuppetBox::Result.new()
+  end
+
+  def node_name
+    "mock_node"
   end
 
   def pass
@@ -15,7 +20,7 @@ class MockDriverInstance
     @result.save(PuppetBox::Result::PS_NOT_IDEMPOTENT, "fake not idempotent report")
   end
 
-  def run_puppet_x2
+  def run_puppet_x2(puppet_class)
   end
 
   def result
@@ -27,11 +32,14 @@ class MockDriverInstance
   end
 
   def self_test
+    true
   end
 
   def close
     true
   end
 
+  def reset
+  end
 
 end

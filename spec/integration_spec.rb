@@ -19,14 +19,14 @@ RSpec.describe PuppetBox do
       di  = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE, CONFIG_GOOD)
       pb  = PuppetBox::PuppetBox.new
       res = pb.run_puppet(di, "passing")
-      expect(res.passed?).to be true
+      expect(pb.result_set.passed?).to be true
     end
 
     it "reports failing code correctly" do
       di  = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE, CONFIG_GOOD)
       pb  = PuppetBox::PuppetBox.new
-      res = pb.run_puppet(di, "failing")
-      expect(res.passed?).to be false
+      pb.run_puppet(di, "failing")
+      expect(pb.result_set.passed?).to be false
     end
 
     it "reports error starting vagrant with non-existent box" do

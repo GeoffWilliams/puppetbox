@@ -61,9 +61,19 @@ RSpec.describe PuppetBox::ResultSet do
     expect(rs.passed?).to be false
   end
 
+  it "reports overall fail status when resultset empty" do
+    rs = PuppetBox::ResultSet.new
+    expect(rs.passed?).to be false
+  end
+
   it "returns zero when result count for non-existant node are requested" do
     rs = PuppetBox::ResultSet.new
     expect(rs.class_size("nonexistant")).to be 0
+  end
+
+  it "gives zero when test count for empty instance requested" do
+    rs = PuppetBox::ResultSet.new
+    expect(rs.test_size).to be 0
   end
   # it "saves results correctly" do
   #   rs = PuppetBox::ResultSet.new

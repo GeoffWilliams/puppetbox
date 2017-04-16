@@ -2,11 +2,14 @@ require "puppetbox/result_set"
 require "puppetbox/logger"
 require "puppetbox/nodeset"
 require "puppetbox/driver/vagrant"
+require "puppetbox/report"
 
 module PuppetBox
   class PuppetBox
 
-    def initialize(logger:nil, nodeset_file: nil)
+    WORKING_DIR = File.join(Dir.home, '.puppetbox')
+
+    def initialize(logger:nil, nodeset_file: nil, working_dir: nil)
       # The results of all tests on all driver instances
       @result_set = ResultSet.new
 
@@ -20,6 +23,8 @@ module PuppetBox
       # talk to use about nodes of particular name and puppetbox will sort out
       # the how and why of what this exactly should involve
       @nodeset = NodeSet.new(nodeset_file)
+
+      @working_dir = working_dir || WORKING_DIR
     end
 
 
@@ -70,8 +75,11 @@ module PuppetBox
             config,
             # "#{repo.tempdir}/etc/puppetlabs/code/environments/production",
             logger: @logger,
-
+            working_dir: @working_dir,
           )
+
+          # immediately validate the configuration to allow us to fail-fast
+          di.validate_config
         else
           raise "PuppetBox only supports driver: 'vagrant' at the moment (requested: #{driver})"
         end
@@ -123,29 +131,16 @@ module PuppetBox
 
     # Print all results to STDOUT
     def print_results
-      # print the report summary
-      indent = "  "
-      puts "\n\n\nSummary\n======="
-      summary.each { |node, class_results|
-        puts node
-        if class_results.class == String
-          puts "#{indent}#{class_results}"
-        else
-          class_results.each { |puppet_class, passed|
-            line = "#{indent}#{puppet_class}: #{passed ? "OK": "FAILED"}"
-            if passed
-              puts line.green
-            else
-              puts line.red
-            end
-          }
-        end
-      }
-
-      puts "Overall acceptance testing result #{overall}"
+      Report::print(@result_set)
     end
 
+    def result_set
+      @result_set
+    end
 
+    def passed?
+      @result_set.passed?
+    end
 
     # Run puppet using `driver_instance` to execute
     def run_puppet(driver_instance, puppet_classes, logger:nil, reset_after_run:true)
@@ -153,32 +148,29 @@ module PuppetBox
       logger = logger || @logger
       logger.debug("#{driver_instance.node_name} running test for #{puppet_classes}")
       puppet_classes = Array(puppet_classes)
-      results = ResultSet.new
+
       if driver_instance.open
         logger.debug("#{driver_instance.node_name} started")
         if driver_instance.self_test
           logger.debug("#{driver_instance.node_name} self_test OK, running puppet")
           puppet_classes.each{ |puppet_class|
-            if results.class_size(driver_instance.node_name) > 0 and reset_after_run
+            if @result_set.class_size(driver_instance.node_name) > 0 and reset_after_run
               # purge and reboot the vm - this will save approximately 1 second
               # per class on the self-test which we now know will succeed
               driver_instance.reset
             end
             driver_instance.run_puppet_x2(puppet_class)
-            results.save(driver_instance.node_name, puppet_class, driver_instance.result)
+            @result_set.save(driver_instance.node_name, puppet_class, driver_instance.result)
           }
           logger.debug("#{driver_instance.node_name} test completed, closing instance")
-          driver_instance.close
         else
-          driver_instance.close
           raise "#{driver_instance.node_name} self test failed, unable to continue"
         end
       else
-        driver_instance.close
         raise "#{driver_instance.node_name} failed to start, unable to continue"
       end
 
-      results
+      driver_instance.close
     end
 
   end

@@ -1,27 +1,27 @@
+require 'colorize'
 module PuppetBox
   module Report
-    def self.printstuff(stream=$STDOUT)
+    def self.pretty_status(passed)
+      passed ? 'OK'.green: 'FAILED'.red
+    end
+
+    def self.print(result_set, stream=$stdout)
       # print the report summary
       indent = "  "
       stream.puts "\n\n\nSummary\n======="
-      summary.each { |node, class_results|
-        puts node
+      result_set.results.each { |node, class_results|
+        stream.puts node
         if class_results.class == String
           stream.puts "#{indent}#{class_results}"
         else
-          class_results.each { |puppet_class, passed|
-            line = "#{indent}#{puppet_class}: #{passed ? "OK": "FAILED"}"
-            if passed
-              stream.puts line.green
-            else
-              stream.puts line.red
-            end
+          class_results.each { |puppet_class, result|
+            stream.puts "#{indent}#{puppet_class}: #{pretty_status(result.passed?)}"
           }
         end
       }
 
-      stream.puts "OVERALL STATUS #{overall}"
-      overall
+      stream.puts "\n\nOVERALL STATUS: #{pretty_status(result_set.passed?)}"
     end
+
   end
 end

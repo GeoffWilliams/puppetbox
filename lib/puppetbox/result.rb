@@ -46,7 +46,6 @@ module PuppetBox
     def passed?
       passed = nil
       @report.each { |r|
-        puts "...REPORT"
         if passed == nil
           passed = (r[:status] == PS_OK)
         else

@@ -23,7 +23,7 @@ RSpec.describe PuppetBox::Result do
     expect(res.passed?).to be false
   end
 
-  it "reports status unkown as failed" do
+  it "reports status unknown as failed" do
     res = PuppetBox::Result.new()
     res.save(240,['blah'])
     expect(res.passed?).to be false

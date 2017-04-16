@@ -9,28 +9,21 @@ RSpec.describe PuppetBox do
 
 
   it "runs puppet and returns passed with good mock driver_instance" do
+    pb = PuppetBox::PuppetBox.new
     driver_instance = MockDriverInstance.new()
     driver_instance.pass
-    expect(driver_instance.result.passed?).to be true
+    pb.run_puppet(driver_instance, 'blah')
+    expect(pb.result_set.passed?).to be true
   end
 
   it "runs puppet and returns failed with bad mock driver_instance" do
+    pb = PuppetBox::PuppetBox.new
     driver_instance = MockDriverInstance.new()
     driver_instance.fail
-    expect(driver_instance.result.passed?).to be false
+    pb.run_puppet(driver_instance, 'blah')
+    expect(pb.result_set.passed?).to be false
   end
 
-  it "runs puppet and returns passed with good mock driver_instance" do
-    driver_instance = MockDriverInstance.new()
-    driver_instance.pass
-    expect(driver_instance.result.passed?).to be true
-  end
-
-  it "runs puppet and returns failed with bad mock driver_instance" do
-    driver_instance = MockDriverInstance.new()
-    driver_instance.fail
-    expect(driver_instance.result.passed?).to be false
-  end
 
   it "enqueues a test" do
     pb = PuppetBox::PuppetBox.new(nodeset_file: NODESET_GOOD)
@@ -64,4 +57,17 @@ RSpec.describe PuppetBox do
     # pass if reached without error
   end
 
+  it "records results (check by count)" do
+    pb = PuppetBox::PuppetBox.new
+
+    driver_instance = MockDriverInstance.new()
+    driver_instance.fail
+
+    expect(pb.result_set.test_size).to be 0
+    pb.run_puppet(driver_instance, 'inky')
+    expect(pb.result_set.test_size).to be 1
+    pb.run_puppet(driver_instance, 'blinky')
+    expect(pb.result_set.test_size).to be 2
+
+  end
 end
