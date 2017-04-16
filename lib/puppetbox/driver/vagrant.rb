@@ -34,30 +34,6 @@ module PuppetBox
         # ./spec/acceptance directory
         @vm.add_shared_folder(SPEC_ACCEPTANCE_MOUNT)
 
-        # if ! @config.has_key?("box")
-        #   raise "Node #{node_name} must specify box"
-        # end
-
-        # Add the code dir to the config has so that it will automatically become
-        # a shared folder when the VM boots
-
-        # can't use dig() might not be ruby 2.3
-        # if @config.has_key?("folders")
-        #   @config["folders"] = Array(@config["folders"])
-        #
-        #   # all paths must be fully qualified.  If we were asked to do a relative path, change
-        #   # it to the current directory since that's probably what the user wanted.  Not right?
-        #   # user supply correct path!
-        #   @config["folders"] = @config["folders"].map { |folder|
-        #     if ! folder.start_with? '/'
-        #       folder = "#{Dir.pwd}/#{folder}"
-        #     end
-        #     folder
-        #   }
-        # else
-        #   @config["folders"] = []
-        # end
-        # @config["folders"] << "#{codedir}:#{PUPPET_CODE_MOUNT}"
         @logger.debug "instance #{name} initialised"
       end
 

@@ -85,43 +85,6 @@ module PuppetBox
           "classes"  => [],
         }
       end
-
-      # di
-      # result = ::PuppetBox.run_puppet(di, puppet_class)
-
-      # indent = "  "
-      # if result.passed
-      #   logger.info("#{indent}#{host}:#{puppet_class} --> PASSED")
-      # else
-      #   logger.error("#{indent}#{host}:#{puppet_class} --> FAILED")
-      #   # since we stop running on failure, the error messages will be in the
-      #   # last element of the result.messages array (tada!)
-      #   messages = result.messages
-      #   messages[-1].each { |line|
-      #     # puts "XXXXXXX #{line}"
-      #     logger.error "#{indent}#{host} - #{line}"
-      #   }
-      #   #   puts "size of result messages #{result.messages.size}"
-      #   #   puts "size of result messages #{result.messages[0].size}"
-      #   #   run.each { |message_arr|
-      #   #     puts message_arr
-      #   #     #message_arr.each { |line|
-      #   #   #    puts line
-      #   #   #  }
-      #   #     # require 'pry'
-      #   #     # binding.pry
-      #   #     #puts "messages size"
-      #   #     #puts messages.size
-      #   #   #  messages.each { |message|
-      #   #       # messages from the puppet run are avaiable in a nested array of run
-      #   #       # and then lines so lets print each one out indended from the host so
-      #   #       # we can see what's what
-      #   #   #    logger.error("#{host}       #{message}")
-      #   #   #  }
-      #   #   }
-      #   # }
-      # end
-      # result.passed
     end
 
     # Print a summary of *all* results to STDOUT.  Does not include the error(s)
