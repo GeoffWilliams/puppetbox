@@ -6,8 +6,9 @@ require "puppetbox/logger"
 module PuppetBox
   module Driver
     class Vagrant
-      WORKING_DIR_VAGRANT = "vagrant"
-      PUPPET_CODE_MOUNT   = "/etc/puppetlabs/code/environments/production"
+      WORKING_DIR_VAGRANT   = "vagrant"
+      PUPPET_CODE_MOUNT     = "/etc/puppetlabs/code/environments/production"
+      SPEC_ACCEPTANCE_MOUNT = "spec/acceptance:/acceptance"
 
       def node_name
         @name
@@ -26,8 +27,12 @@ module PuppetBox
         @vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir:@working_dir, logger:@logger)
         @logger.debug("creating instance metadata for #{@name}")
         @vm = @vom.instance(@name, config:@config)
+
+        # the code under test
         @vm.add_shared_folder("#{codedir}:#{PUPPET_CODE_MOUNT}")
 
+        # ./spec/acceptance directory
+        @vm.add_shared_folder(SPEC_ACCEPTANCE_MOUNT)
 
         # if ! @config.has_key?("box")
         #   raise "Node #{node_name} must specify box"
@@ -81,16 +86,6 @@ module PuppetBox
       def open()
         # make sure working dir exists...
         FileUtils.mkdir_p(@working_dir)
-
-        # vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir:@working_dir, logger:@logger)
-
-        # @logger.debug("creating instance metadata for #{@name}")
-        # @vm = vom.instance(@name, config:@config)
-
-        # obtain 'fixed' metadata from instance
-        # @config = @vm.config
-        # add in our mandatory shared folder
-        # @vm.add_shared_folder("#{codedir}:#{PUPPET_CODE_MOUNT}")
         @vm.save
 
         @logger.debug("Instance saved and ready for starting")
@@ -101,7 +96,7 @@ module PuppetBox
       # anything on SSH...)
       def close()
         if ! @keep_vm
-          @logger.info("Closing #{@node_name}")
+          @logger.info("Closing #{@name}")
           @vm.purge
         end
       end

@@ -32,11 +32,7 @@ module PuppetBox
     def enqueue_test(node_name, run_from, puppet_class)
       instantiate_driver(node_name, run_from)
       @testsuite[node_name]["classes"] << puppet_class
-      #  get_driver_instance(driver_name, host)
-      # node_name
-      # puppet_class.name,
-      # nodeset_yaml["HOSTS"][node.name]['config'],
-      # @repo,
+
     end
 
     def run_testsuite
@@ -128,8 +124,8 @@ module PuppetBox
       # result.passed
     end
 
-
-    # Print all results to STDOUT
+    # Print a summary of *all* results to STDOUT.  Does not include the error(s)
+    # if any - these would have been printed after each individual test ran
     def print_results
       Report::print(@result_set)
     end
@@ -153,14 +149,22 @@ module PuppetBox
         logger.debug("#{driver_instance.node_name} started")
         if driver_instance.self_test
           logger.debug("#{driver_instance.node_name} self_test OK, running puppet")
-          puppet_classes.each{ |puppet_class|
+          puppet_classes.each { |puppet_class|
             if @result_set.class_size(driver_instance.node_name) > 0 and reset_after_run
               # purge and reboot the vm - this will save approximately 1 second
               # per class on the self-test which we now know will succeed
               driver_instance.reset
             end
+            logger.info("running test #{driver_instance.node_name} - #{puppet_class}")
             driver_instance.run_puppet_x2(puppet_class)
             @result_set.save(driver_instance.node_name, puppet_class, driver_instance.result)
+
+            Report::log_test_result_or_errors(
+              @logger,
+              driver_instance.node_name,
+              puppet_class,
+              driver_instance.result,
+            )
           }
           logger.debug("#{driver_instance.node_name} test completed, closing instance")
         else

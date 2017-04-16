@@ -55,27 +55,5 @@ module PuppetBox
       end
     end
 
-    #
-    #
-    #   if nodeset["hosts"][node.name].has_key?('config') and nodeset_yaml["HOSTS"][node.name].has_key?('driver')
-    #     test.classes.each { |puppet_class|
-    #       logger.info "Acceptance testing #{node.name} #{puppet_class.name}"
-    #       summary[node.name][puppet_class.name] = pb.provision_and_test(
-    #         nodeset_yaml["HOSTS"][node.name]["driver"],
-    #         node.name,
-    #         puppet_class.name,
-    #         nodeset_yaml["HOSTS"][node.name]['config'],
-    #         @repo,
-    #       )
-    #
-    #       overall &= ! summary[node.name][puppet_class.name]
-    #     }
-    #   else
-    #     message = "onceover-nodes.yaml missing `config` or `driver` element for #{node.name} (tests skipped)"
-    #     summary[node.name] = message
-    #     overall = false
-    #   end
-    # end
-
   end
 end

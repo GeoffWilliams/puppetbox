@@ -18,12 +18,18 @@ module PuppetBox
       @report = []
     end
 
+    # Puppet exit codes:
     # 0: The run succeeded with no changes or failures; the system was already in the desired state.
     # 1: The run failed, or wasn't attempted due to another run already in progress.
     # 2: The run succeeded, and some resources were changed.
     # 4: The run succeeded, and some resources failed.
     # 6: The run succeeded, and included both changes and failures.
     def save(status_code, messages)
+
+      # messages will usually be an array of output - one per line, but it might
+      # not be and everthing expects to be so just turn it into one if it isn't
+      # already...
+      messages = Array(messages)
       status = PS_ERROR
       if @report.empty?
         # first run

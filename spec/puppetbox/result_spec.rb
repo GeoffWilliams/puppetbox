@@ -72,4 +72,5 @@ RSpec.describe PuppetBox::Result do
     # we return nil in this special case (which will test as ==false)
     expect(res.passed?).to be nil
   end
+
 end
