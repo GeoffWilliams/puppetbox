@@ -12,7 +12,7 @@ RSpec.describe PuppetBox do
     pb = PuppetBox::PuppetBox.new
     driver_instance = MockDriverInstance.new()
     driver_instance.pass
-    pb.run_puppet(driver_instance, 'blah')
+    pb.run_puppet(driver_instance, {'blah'=>'include blah'})
     expect(pb.result_set.passed?).to be true
   end
 
@@ -20,26 +20,26 @@ RSpec.describe PuppetBox do
     pb = PuppetBox::PuppetBox.new
     driver_instance = MockDriverInstance.new()
     driver_instance.fail
-    pb.run_puppet(driver_instance, 'blah')
+    pb.run_puppet(driver_instance, {'blah'=>'include blah'})
     expect(pb.result_set.passed?).to be false
   end
 
 
   it "enqueues a test" do
     pb = PuppetBox::PuppetBox.new(nodeset_file: NODESET_GOOD)
-    pb.enqueue_test(NODE_GOOD, "/tmp", "test_class")
+    pb.enqueue_test_class(NODE_GOOD, "/tmp", "test_class")
 
     # pass if reached without error
   end
 
   it "rejects enqueuing a test when there is no correspondng node definition" do
     pb = PuppetBox::PuppetBox.new
-    expect{pb.enqueue_test("nothere", "/tmp", "test_class")}.to raise_error /is not defined/
+    expect{pb.enqueue_test_class("nothere", "/tmp", "test_class")}.to raise_error /is not defined/
   end
 
   it "rejects enqueuing a test when node definition does not specify box" do
     pb = PuppetBox::PuppetBox.new(nodeset_file: NODESET_MISSING_BOX)
-    expect{pb.enqueue_test(NODE_MISSING_BOX, "/tmp", "test_class")}.to raise_error /must specify box/
+    expect{pb.enqueue_test_class(NODE_MISSING_BOX, "/tmp", "test_class")}.to raise_error /must specify box/
   end
 
   it "instantiates a driver for named test node correctly" do
@@ -64,9 +64,9 @@ RSpec.describe PuppetBox do
     driver_instance.fail
 
     expect(pb.result_set.test_size).to be 0
-    pb.run_puppet(driver_instance, 'inky')
+    pb.run_puppet(driver_instance, {'inky'=>'include inky'})
     expect(pb.result_set.test_size).to be 1
-    pb.run_puppet(driver_instance, 'blinky')
+    pb.run_puppet(driver_instance, {'blinky'=>'include blinky'})
     expect(pb.result_set.test_size).to be 2
 
   end

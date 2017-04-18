@@ -12,21 +12,25 @@ module PuppetBox
       # mount spec/accpetance into the same directory name inside the VM for simplicity
       SPEC_ACCEPTANCE_MOUNT = "spec/acceptance:/spec/acceptance"
 
+      PUPPET_TESTCASE_DIR   = "/testcase"
+
       def node_name
         @name
       end
 
       def initialize(name, codedir, config, keep_vm:false, working_dir:nil, logger: nil)
 
-        @name         = name
-        @keep_vm      = keep_vm
-        @working_dir  = File.join((working_dir || PuppetBox::WORKING_DIR), WORKING_DIR_VAGRANT)
-        @config       = config
-        @result       = Result.new
-        @logger       = Logger.new(logger).logger
+        @name           = name
+        @keep_vm        = keep_vm
+        @working_dir    = working_dir || PuppetBox::WORKING_DIR
+        @vagrant_vm_dir = File.join(@working_dir, WORKING_DIR_VAGRANT)
+        @testcase_dir   = File.join(@working_dir, PUPPET_TESTCASE_DIR)
+        @config         = config
+        @result         = Result.new
+        @logger         = Logger.new(logger).logger
 
         # setup the instance
-        @vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir:@working_dir, logger:@logger)
+        @vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir:@vagrant_vm_dir, logger:@logger)
         @logger.debug("creating instance metadata for #{@name}")
         @vm = @vom.instance(@name, config:@config)
 
@@ -35,6 +39,10 @@ module PuppetBox
 
         # ./spec/acceptance directory
         @vm.add_shared_folder(SPEC_ACCEPTANCE_MOUNT)
+
+        # mount the temporary testcase files (smoketests - the generated files
+        # holding 'include apache', etc)
+        @vm.add_shared_folder("#{@testcase_dir}:#{PUPPET_TESTCASE_DIR}")
 
         @logger.debug "instance #{name} initialised"
       end
@@ -52,9 +60,9 @@ module PuppetBox
       #   2: The run succeeded, and some resources were changed.
       #   4: The run succeeded, and some resources failed.
       #   6: The run succeeded, and included both changes and failures.
-      def run_puppet(puppet_class)
+      def run_puppet(puppet_file)
         status_code, messages = @vm.run(
-          "sudo -i puppet apply --detailed-exitcodes -e 'include #{puppet_class}'"
+          "sudo -i puppet apply --detailed-exitcodes #{puppet_file}"
         )
         @result.save(status_code, messages)
         @result.passed?
@@ -64,6 +72,8 @@ module PuppetBox
       def open()
         # make sure working dir exists...
         FileUtils.mkdir_p(@working_dir)
+        FileUtils.mkdir_p(@vagrant_vm_dir)
+        FileUtils.mkdir_p(@testcase_dir)
         @vm.save
 
         @logger.debug("Instance saved and ready for starting")
@@ -73,7 +83,10 @@ module PuppetBox
       # Close a connection to a box (eg stop a vm, probaly doesn't need to do
       # anything on SSH...)
       def close()
-        if ! @keep_vm
+        if @keep_vm
+          vagrant_cmd = "cd #{@vm.vm_instance_dir} && vagrant ssh"
+          @logger.info("VM #{@name} left running on user request, `#{vagrant_cmd}` to access - be sure to clean up your VMs!")
+        else
           @logger.info("Closing #{@name}")
           @vm.purge
         end
@@ -126,14 +139,18 @@ module PuppetBox
         status
       end
 
-      def run_puppet_x2(puppet_class)
+      def run_puppet_x2(puppet_file)
         # if you need to link a module into puppet's modulepath either do it
         # before running puppet (yet to be supported) or use the @config hash
         # for vagrant to mount what you need as a shared folder
-        if run_puppet(puppet_class)
+        if run_puppet(puppet_file)
           # Only do the second run if the first run passes
-          run_puppet(puppet_class)
+          run_puppet(puppet_file)
         end
+      end
+
+      # noop
+      def sync_testcase(node_name, test_name)
       end
 
     end

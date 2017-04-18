@@ -42,4 +42,7 @@ class MockDriverInstance
   def reset
   end
 
+  # noop
+  def sync_testcase(node_name, test_name)
+  end
 end

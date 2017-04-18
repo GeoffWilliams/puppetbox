@@ -3,6 +3,8 @@ require "puppetbox/logger"
 require "puppetbox/nodeset"
 require "puppetbox/driver/vagrant"
 require "puppetbox/report"
+require "puppetbox/puppet"
+require "puppetbox/util"
 
 module PuppetBox
   class PuppetBox
@@ -12,7 +14,14 @@ module PuppetBox
     ACCEPTANCE_DEFAULT  = "__ALL__"
     SETUP_SCRIPT_GLOB   = "setup.*"
 
-    def initialize(logger:nil, nodeset_file: nil, working_dir: nil)
+    # we write testcases (smoketests) to this directory in our working dir...
+    PUPPET_TESTCASE_TEMPDIR = "testcase"
+
+    # ...and they appear on the system under test at this directory (like a
+    # wormhole) - the driver class is responsible for making this happen
+    PUPPET_TESTCASE_DIR   = "/testcase"
+
+    def initialize(logger:nil, nodeset_file: nil, working_dir: nil, keep_test_system:false)
       # The results of all tests on all driver instances
       @result_set = ResultSet.new
 
@@ -28,19 +37,24 @@ module PuppetBox
       @nodeset = NodeSet.new(nodeset_file)
 
       @working_dir = working_dir || WORKING_DIR
+      @puppet_test_tempdir = File.join(@working_dir, PUPPET_TESTCASE_TEMPDIR)
+
+      @keep_test_system = keep_test_system
     end
 
 
     # Enqueue a test into the `testsuite` for
-    def enqueue_test(node_name, run_from, puppet_class)
+    def enqueue_test_class(node_name, run_from, puppet_class, pre:nil)
       instantiate_driver(node_name, run_from)
-      @testsuite[node_name]["classes"] << puppet_class
-
+      # eg @testsuite['centos']['apache']='include apache'
+      test_name=puppet_class
+      @testsuite[node_name]["tests"][test_name] = Puppet::include_class(puppet_class, pre:pre)
     end
 
     def run_testsuite
       @testsuite.each { |id, tests|
-        run_puppet(tests["instance"], tests["classes"], logger:@logger, reset_after_run:true)
+        # tests for each node
+        run_puppet(tests["instance"], tests["tests"], logger:@logger, reset_after_run:true)
       }
     end
 
@@ -75,6 +89,7 @@ module PuppetBox
             # "#{repo.tempdir}/etc/puppetlabs/code/environments/production",
             logger: @logger,
             working_dir: @working_dir,
+            keep_vm: @keep_test_system
           )
 
           # immediately validate the configuration to allow us to fail-fast
@@ -85,7 +100,7 @@ module PuppetBox
 
         @testsuite[node_name] = {
           "instance" => di,
-          "classes"  => [],
+          "tests"  => {},
         }
       end
     end
@@ -155,32 +170,41 @@ module PuppetBox
       end
     end
 
-    # Run puppet using `driver_instance` to execute
-    def run_puppet(driver_instance, puppet_classes, logger:nil, reset_after_run:true)
+
+    # Run puppet using `driver_instance` to execute `puppet_codes`
+    # @param puppet_test Hash of test names <-> puppet code, eg {"apache"=>"include apache","nginx"=>"include nginx"}}
+    def run_puppet(driver_instance, puppet_tests, logger:nil, reset_after_run:true)
       # use supplied logger in preference to the default puppetbox logger instance
       logger = logger || @logger
-      logger.debug("#{driver_instance.node_name} running test for #{puppet_classes}")
-      puppet_classes = Array(puppet_classes)
+      logger.debug("#{driver_instance.node_name} running #{puppet_tests.size} tests")
 
       if driver_instance.open
         logger.debug("#{driver_instance.node_name} started")
         if driver_instance.self_test
           logger.debug("#{driver_instance.node_name} self_test OK, running puppet")
-          puppet_classes.each { |puppet_class|
+          puppet_tests.each { |test_name, puppet_code|
             if @result_set.class_size(driver_instance.node_name) > 0 and reset_after_run
               # purge and reboot the vm - this will save approximately 1 second
               # per class on the self-test which we now know will succeed
               driver_instance.reset
             end
-            setup_test(driver_instance, puppet_class)
-            logger.info("running test #{driver_instance.node_name} - #{puppet_class}")
-            driver_instance.run_puppet_x2(puppet_class)
-            @result_set.save(driver_instance.node_name, puppet_class, driver_instance.result)
+            setup_test(driver_instance, test_name)
+            logger.info("running test #{driver_instance.node_name} - #{test_name}")
+
+            # write out the local test file
+            relative_puppet_file = commit_testcase(
+              puppet_tests, driver_instance.node_name, test_name
+            )
+            driver_instance.sync_testcase(driver_instance.node_name, test_name)
+
+            puppet_file_remote = File.join(PUPPET_TESTCASE_DIR, relative_puppet_file)
+            driver_instance.run_puppet_x2(puppet_file_remote)
+            @result_set.save(driver_instance.node_name, test_name, driver_instance.result)
 
             Report::log_test_result_or_errors(
               @logger,
               driver_instance.node_name,
-              puppet_class,
+              test_name,
               driver_instance.result,
             )
           }
@@ -193,6 +217,20 @@ module PuppetBox
       end
 
       driver_instance.close
+    end
+
+    #
+    #@param testcases Pass in directly the testcases we are working against, to
+    #   handle situations where `run_puppet()` was called directly
+    def commit_testcase(testcases, node_name, test_name)
+      puppet_code = testcases[test_name]
+      relative_filename = Util.test_file_name(node_name, test_name)
+      filename = File.join(@puppet_test_tempdir, relative_filename)
+      FileUtils.mkdir_p(File.dirname(filename))
+      File.write(filename, puppet_code)
+      @logger.debug("Saved testcase #{filename}: #{puppet_code.slice(0,50)}...(ellipsed)")
+
+      relative_filename
     end
 
   end

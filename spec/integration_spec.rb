@@ -18,14 +18,14 @@ RSpec.describe PuppetBox do
     it "reports passing code correctly" do
       di  = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE, CONFIG_GOOD)
       pb  = PuppetBox::PuppetBox.new
-      res = pb.run_puppet(di, "passing")
+      res = pb.run_puppet(di, {"passing"=>"include passing"})
       expect(pb.result_set.passed?).to be true
     end
 
     it "reports failing code correctly" do
       di  = PuppetBox::Driver::Vagrant.new('test',CODE_FIXTURE, CONFIG_GOOD)
       pb  = PuppetBox::PuppetBox.new
-      pb.run_puppet(di, "failing")
+      pb.run_puppet(di, {"failing"=>"include failing"})
       expect(pb.result_set.passed?).to be false
     end
 
@@ -33,7 +33,7 @@ RSpec.describe PuppetBox do
       # will fail due to missing box
       di  = PuppetBox::Driver::Vagrant.new('bad_box', CODE_FIXTURE, CONFIG_NON_EXISTENT_BOX)
       pb  = PuppetBox::PuppetBox.new(nodeset_file: NODESET_MISSING_BOX)
-      expect{pb.run_puppet(di, "passing")}.to raise_error /failed to start/
+      expect{pb.run_puppet(di, {"passing"=>"include passing"})}.to raise_error /failed to start/
     end
 
 
@@ -41,12 +41,12 @@ RSpec.describe PuppetBox do
       # will fail due to missing puppet installation
       di  = PuppetBox::Driver::Vagrant.new('bad_self_test', CODE_FIXTURE ,CONFIG_BAD_SELF_TEST)
       pb  = PuppetBox::PuppetBox.new()
-      expect{pb.run_puppet(di, "passing")}.to raise_error /self test failed/
+      expect{pb.run_puppet(di, {"passing"=>"include passing"})}.to raise_error /self test failed/
     end
 
     it "enqueue and run tests works" do
       pb  = PuppetBox::PuppetBox.new(nodeset_file: NODESET_GOOD)
-      pb.enqueue_test(NODE_GOOD, CODE_FIXTURE, "passing")
+      pb.enqueue_test_class(NODE_GOOD, CODE_FIXTURE, "passing")
       pb.run_testsuite
 
       # pass
@@ -54,8 +54,8 @@ RSpec.describe PuppetBox do
 
     it "enqueue and run multiple tests works" do
       pb  = PuppetBox::PuppetBox.new(nodeset_file: NODESET_GOOD)
-      pb.enqueue_test(NODE_GOOD, CODE_FIXTURE, "passing")
-      pb.enqueue_test(NODE_GOOD, CODE_FIXTURE, "passing::class2")
+      pb.enqueue_test_class(NODE_GOOD, CODE_FIXTURE, "passing")
+      pb.enqueue_test_class(NODE_GOOD, CODE_FIXTURE, "passing::class2")
       pb.run_testsuite
 
       # pass
