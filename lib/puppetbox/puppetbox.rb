@@ -199,6 +199,7 @@ module PuppetBox
 
             puppet_file_remote = File.join(PUPPET_TESTCASE_DIR, relative_puppet_file)
             driver_instance.run_puppet_x2(puppet_file_remote)
+            @logger.debug("Saved result #{driver_instance.node_name} #{test_name} #{driver_instance.result.passed?}")
             @result_set.save(driver_instance.node_name, test_name, driver_instance.result)
 
             Report::log_test_result_or_errors(

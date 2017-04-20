@@ -94,6 +94,7 @@ module PuppetBox
       end
 
       def reset()
+        @result = Result.new
         @vm.reset
       end
 

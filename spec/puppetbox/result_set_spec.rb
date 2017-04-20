@@ -1,6 +1,7 @@
 require "spec_helper"
 require "puppetbox/result_set"
 require "puppetbox/result"
+require "puppetbox/report"
 
 RSpec.describe PuppetBox::ResultSet do
 
@@ -15,7 +16,22 @@ RSpec.describe PuppetBox::ResultSet do
   it "rejects saves where a Result object is not passed" do
     rs = PuppetBox::ResultSet.new
 
+    # the string "should not be accepted" should be a `Result` object normally
     expect{rs.save("foo_node", "bar_class", "should not be accepted")}.to raise_error /PuppetBox::Result/
+  end
+
+  it "reports overall failure and individual tests passes correctly (1 passed class but node fails)" do
+    rs = PuppetBox::ResultSet.new
+    passed = PuppetBox::Result.new
+    passed.save(0, "good")
+    failed = PuppetBox::Result.new
+    failed.save(255, "bad")
+    rs.save("foo_node", "good_class", passed)
+    rs.save("foo_node", "bad_class", failed)
+
+    expect(rs.passed?).to be false
+    expect(rs.results["foo_node"]["good_class"].passed?).to be true
+    expect(rs.results["foo_node"]["bad_class"].passed?).to be false
   end
 
   it "accepts multiple results for the same node" do
@@ -75,28 +91,6 @@ RSpec.describe PuppetBox::ResultSet do
     rs = PuppetBox::ResultSet.new
     expect(rs.test_size).to be 0
   end
-  # it "saves results correctly" do
-  #   rs = PuppetBox::ResultSet.new
-  #   rs.save("foo_node", "bar_class", "should never be accepted")
-  #   expect{PuppetBox::NodeSet.parse(NODESET_INVALID_VERSION)}.to raise_error /version/i
-  # end
 
-  # def save(key, result)
-  #   @results[key] = result
-  # end
-  #
-  # def passed?
-  #   @results.map { |key,result|
-  #     result.passed?
-  #   }.all?
-  # end
-  #
-  # def data
-  #   @results
-  # end
-  #
-  # def size
-  #   @results.size
-  # end
 
 end
