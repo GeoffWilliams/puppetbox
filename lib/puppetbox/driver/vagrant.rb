@@ -9,8 +9,9 @@ module PuppetBox
       WORKING_DIR_VAGRANT   = "vagrant"
       PUPPET_CODE_MOUNT     = "/etc/puppetlabs/code/environments/production"
 
-      # mount spec/accpetance into the same directory name inside the VM for simplicity
-      SPEC_ACCEPTANCE_MOUNT = "spec/acceptance:/spec/acceptance"
+      # mount spec/ into the same directory name inside the VM for simplicity -
+      # now we can easility access fixtures, tests, etc
+      SPEC_ACCEPTANCE_MOUNT = "spec:/spec"
 
       PUPPET_TESTCASE_DIR   = "/testcase"
 
