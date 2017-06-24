@@ -2,18 +2,23 @@ require 'vagrantomatic/vagrantomatic'
 require 'puppetbox/result'
 require 'fileutils'
 require "puppetbox/logger"
+require "puppetbox/windows_support"
 
 module PuppetBox
   module Driver
     class Vagrant
       WORKING_DIR_VAGRANT   = "vagrant"
-      PUPPET_CODE_MOUNT     = "/etc/puppetlabs/code/environments/production"
+      CODEDIR               = "/etc/puppetlabs/code"
+      PUPPET_CODE_MOUNT     = "#{CODEDIR}/environments/production"
 
       # mount spec/ into the same directory name inside the VM for simplicity -
       # now we can easility access fixtures, tests, etc
       SPEC_ACCEPTANCE_MOUNT = "spec:/spec"
 
       PUPPET_TESTCASE_DIR   = "/testcase"
+      PUPPET_CMD            = "puppet"
+
+
 
       def node_name
         @name
@@ -30,12 +35,18 @@ module PuppetBox
         @result         = Result.new
         @logger         = Logger.new(logger).logger
 
+        # On windows we MUST take a copy of the onceover codedir
+        # because a) we can't mount into an existing directory
+        # on windows and b) we need to edit environment.conf
+        @config["provision_builtin"] = WindowsSupport::provision_builtin(PUPPET_CODE_MOUNT)
+
         # setup the instance
         @vom = Vagrantomatic::Vagrantomatic.new(vagrant_vm_dir:@vagrant_vm_dir, logger:@logger)
         @logger.debug("creating instance metadata for #{@name}")
+
         @vm = @vom.instance(@name, config:@config)
 
-        # the code under test
+        # the code under test with different pathing for win vs lin
         @vm.add_shared_folder("#{codedir}:#{PUPPET_CODE_MOUNT}")
 
         # ./spec/acceptance directory
@@ -45,7 +56,7 @@ module PuppetBox
         # holding 'include apache', etc)
         @vm.add_shared_folder("#{@testcase_dir}:#{PUPPET_TESTCASE_DIR}")
 
-        @logger.debug "instance #{name} initialised"
+        @logger.debug "instance #{name} initialised (windows: #{@vm.windows})"
       end
 
       def result
@@ -62,9 +73,8 @@ module PuppetBox
       #   4: The run succeeded, and some resources failed.
       #   6: The run succeeded, and included both changes and failures.
       def run_puppet(puppet_file)
-        status_code, messages = @vm.run(
-          "sudo -i puppet apply --detailed-exitcodes #{puppet_file}"
-        )
+        cmd = "#{PUPPET_CMD} apply --detailed-exitcodes #{puppet_file}"
+        status_code, messages = @vm.run(cmd)
         @result.save(status_code, messages)
         @result.passed?
       end
@@ -104,7 +114,8 @@ module PuppetBox
 
       # Test that a VM is operational and able to run puppet
       def self_test()
-        status_code, messages = @vm.run("sudo -i puppet --version")
+        cmd = "#{PUPPET_CMD} --version"
+        status_code, messages = @vm.run(cmd)
         self_test = (status_code == 0)
         if self_test
           @logger.info("Running under Puppet version: #{messages[0].strip}")
@@ -121,23 +132,24 @@ module PuppetBox
       def run_setup_script(script_file)
 
         if script_file =~ /.ps1$/
-          # powershell - not supported yet
-          raise("Windows not supported yet https://github.com/GeoffWilliams/puppetbox/issues/3")
+          cmd = "powershell -ExecutionPolicy Bypass -File #{script_file}"
         else
           # force absolute path
-          script_file = "/#{script_file}"
-
-          @logger.info("Running setup script #{script_file} on #{@name}")
-          status_code, messages = @vm.run("sudo -i #{script_file}")
-          status = (status_code == 0)
-          if status
-            @logger.info("setup script #{script_file} executed successfully")
-          else
-            # our tests are fubar if any setup script failed
-            message = messages.join("\n")
-            raise("setup script #{script_file} failed on #{node_name}:  #{message}")
-          end
+          cmd = "sudo -i /#{script_file}"
         end
+
+
+        @logger.info("Running setup script #{script_file} on #{@name}")
+        status_code, messages = @vm.run(cmd)
+        status = (status_code == 0)
+        if status
+          @logger.info("setup script #{script_file} executed successfully")
+        else
+          # our tests are fubar if any setup script failed
+          message = messages.join("\n")
+          raise("setup script #{script_file} failed on #{node_name}:  #{message}")
+        end
+
         status
       end
 

@@ -5,6 +5,7 @@ require "puppetbox/driver/vagrant"
 require "puppetbox/report"
 require "puppetbox/puppet"
 require "puppetbox/util"
+require "puppetbox/windows_support"
 
 module PuppetBox
   class PuppetBox
@@ -40,6 +41,9 @@ module PuppetBox
       @puppet_test_tempdir = File.join(@working_dir, PUPPET_TESTCASE_TEMPDIR)
 
       @keep_test_system = keep_test_system
+
+      # fix environment.conf on windows platform
+      WindowsSupport::fix_environment_conf
     end
 
 
